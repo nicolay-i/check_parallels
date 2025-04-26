@@ -68,21 +68,21 @@ async def process_query(query, index):
         print(f"Ошибка при запросе к API: {e}")
         return None
 
-async def run_batch(batch_size):
+async def run_batch(num_parallels):
     """Запуск пакета запросов заданного размера"""
     start_time = time.time()
-    tasks = [process_query(user_query, i) for i in range(batch_size)]
+    tasks = [process_query(user_query, i) for i in range(num_parallels)]
     results = await asyncio.gather(*tasks)
     end_time = time.time()
     
     # Вычисление временных метрик и добавление расчета токенов
     total_time = end_time - start_time
-    avg_time = total_time / batch_size if batch_size > 0 else 0
+    avg_time = total_time / num_parallels if num_parallels > 0 else 0
     total_tokens = sum(tokens for result in results if result is not None for tokens in [result[1]])  # Суммируем tokens_answer, игнорируя ошибки
     tokens_per_second = total_tokens / total_time if total_time > 0 else 0
     
     return {
-        "batch_size": batch_size,
+        "num_parallels": num_parallels,
         "total_time": total_time,
         "avg_time": avg_time,
         "results": results,
@@ -112,10 +112,10 @@ async def main(parallels:int=8, max_requests:int=10):
     
     start_time = time.time()
 
-    batch_sizes = []
+    num_parallels = []
     current_size = 1
     while current_size <= max_requests:
-        batch_sizes.append(current_size)
+        num_parallels.append(current_size)
         if current_size < 16:
             current_size *= 2
         else:
@@ -123,7 +123,7 @@ async def main(parallels:int=8, max_requests:int=10):
 
     results = []
     
-    for size in tqdm(batch_sizes, desc="Обработка пакетов"):
+    for size in tqdm(num_parallels, desc="Обработка пакетов"):
         print(f"\nЗапуск пакета размером {size}...")
         result = await run_batch(size)
         results.append(result)
@@ -131,9 +131,9 @@ async def main(parallels:int=8, max_requests:int=10):
         await asyncio.sleep(2)
     
     # Обновление DataFrame для включения токенов в секунду и суммы токенов
-    df = pd.DataFrame([(r["batch_size"], r["total_time"], r["avg_time"], r["tokens_per_second"], r["total_tokens"]) 
+    df = pd.DataFrame([(r["num_parallels"], r["total_time"], r["avg_time"], r["tokens_per_second"], r["total_tokens"]) 
                        for r in results],
-                      columns=["Размер пакета", "Общее время (с)", "Среднее время на запрос (с)", "Токены в секунду", "Сумма токенов"])
+                      columns=["Количество параллельных запросов", "Общее время (с)", "Среднее время на запрос (с)", "Токены в секунду", "Сумма токенов"])
     
     # Сохранение в CSV
     df.to_csv(f"results/results_{parallels}.csv", index=False)
@@ -148,27 +148,27 @@ async def main(parallels:int=8, max_requests:int=10):
     plt.figure(figsize=(12, 9))  # Увеличим размер для дополнительного подграфика
     
     plt.subplot(2, 2, 1)
-    plt.plot(df["Размер пакета"], df["Общее время (с)"], marker='o')
+    plt.plot(df["Количество параллельных запросов"], df["Общее время (с)"], marker='o')
     plt.title("Общее время обработки")
-    plt.xlabel("Размер пакета")
+    plt.xlabel("Количество параллельных запросов")
     plt.ylabel("Время (с)")
     
     plt.subplot(2, 2, 2)
-    plt.plot(df["Размер пакета"], df["Среднее время на запрос (с)"], marker='o')
+    plt.plot(df["Количество параллельных запросов"], df["Среднее время на запрос (с)"], marker='o')
     plt.title("Среднее время на запрос")
-    plt.xlabel("Размер пакета")
+    plt.xlabel("Количество параллельных запросов")
     plt.ylabel("Время (с)")
     
     plt.subplot(2, 2, 3)
-    plt.plot(df["Размер пакета"], df["Токены в секунду"], marker='o')
+    plt.plot(df["Количество параллельных запросов"], df["Токены в секунду"], marker='o')
     plt.title("Токены в секунду")
-    plt.xlabel("Размер пакета")
+    plt.xlabel("Количество параллельных запросов")
     plt.ylabel("Токены/с")
     
     plt.subplot(2, 2, 4)
-    plt.plot(df["Размер пакета"], df["Сумма токенов"], marker='o')
-    plt.title("Сумма токенов по размеру батча")
-    plt.xlabel("Размер пакета")
+    plt.plot(df["Количество параллельных запросов"], df["Сумма токенов"], marker='o')
+    plt.title("Сумма токенов по количеству параллельных запросов")
+    plt.xlabel("Количество параллельных запросов")
     plt.ylabel("Сумма токенов")
     
     plt.tight_layout()
@@ -180,19 +180,19 @@ async def main(parallels:int=8, max_requests:int=10):
 if __name__ == "__main__":
     start_time_all = time.time()
     start_time = time.time()
-    print("Запуск проверки скорости для 4 параллельных запросов (до 50 запросов)")
-    asyncio.run(main(parallels=4, max_requests=50))
-    end_time = time.time()
+    # print("Запуск проверки скорости для 4 параллельных запросов (до 50 запросов)")
+    # asyncio.run(main(parallels=4, max_requests=50))
+    # end_time = time.time()
 
-    print("Запуск проверки скорости для 6 параллельных запросов (до 50 запросов)")
-    start_time = time.time()
-    asyncio.run(main(parallels=6, max_requests=50))
-    end_time = time.time()
+    # print("Запуск проверки скорости для 6 параллельных запросов (до 50 запросов)")
+    # start_time = time.time()
+    # asyncio.run(main(parallels=6, max_requests=50))
+    # end_time = time.time()
 
-    print("Запуск проверки скорости для 8 параллельных запросов (до 50 запросов)")
-    start_time = time.time()
-    asyncio.run(main(parallels=8, max_requests=50))
-    end_time = time.time()
+    # print("Запуск проверки скорости для 8 параллельных запросов (до 50 запросов)")
+    # start_time = time.time()
+    # asyncio.run(main(parallels=8, max_requests=50))
+    # end_time = time.time()
 
     print("Запуск проверки скорости для 10 параллельных запросов (до 50 запросов)")
     start_time = time.time()

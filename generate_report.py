@@ -28,8 +28,8 @@ def generate_report():
         df = pd.read_csv(result_file)
         best_result = df.loc[df['Токены в секунду'].idxmax()]
         all_results.append({
-            'Параллельные запросы': int(parallel_requests),
-            'Оптимальный размер пакета': int(best_result['Размер пакета']),
+            'Количество параллельных запросов': int(parallel_requests),
+            'Оптимальный размер пакета': int(best_result['Количество параллельных запросов']),
             'Максимальная скорость (токены/сек)': best_result['Токены в секунду']
         })
     
@@ -50,8 +50,8 @@ def generate_report():
         
         # Лучшая конфигурация
         report_file.write('### Наилучшая конфигурация для данного оборудования\n\n')
-        report_file.write(f'- **Количество параллельных запросов:** {int(best_config["Параллельные запросы"])}\n')
-        report_file.write(f'- **Размер пакета (batch_size):** {int(best_config["Оптимальный размер пакета"])}\n')
+        report_file.write(f'- **Количество параллельных запросов:** {int(best_config["Количество параллельных запросов"])}\n')
+        report_file.write(f'- **Оптимальный размер пакета:** {int(best_config["Оптимальный размер пакета"])}\n')
         report_file.write(f'- **Скорость обработки:** {best_config["Максимальная скорость (токены/сек)"]:.2f} токенов/сек\n\n')
                 
         report_file.write('---\n\n')
@@ -80,7 +80,7 @@ def generate_report():
             
             # Находим оптимальный размер batch_size
             optimal_batch = df.loc[df['Токены в секунду'].idxmax()]
-            report_file.write(f'**Оптимальный размер пакета:** {int(optimal_batch["Размер пакета"])}\n\n')
+            report_file.write(f'**Оптимальный размер пакета:** {int(optimal_batch["Количество параллельных запросов"])}\n\n')
             report_file.write(f'**Максимальная скорость обработки:** {optimal_batch["Токены в секунду"]:.2f} токенов в секунду\n\n')
             
             report_file.write('---\n\n')
