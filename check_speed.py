@@ -9,6 +9,7 @@ import sys
 
 from dotenv import load_dotenv
 
+from generate_report import generate_report
 from openAi import ask_ai
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -55,10 +56,13 @@ user_prompt_keywoards = """
 # загрузка переменных окружения
 load_dotenv()
 
-async def process_query(query):
+async def process_query(query, index):
     """Отправка запроса к API OpenAI"""
     try:
-        answer, tokens_answer, model_answer = await ask_ai(system_prompt=system_prompt_keywoards, prompt=user_prompt_keywoards + query)
+        answer, tokens_answer, model_answer = await ask_ai(system_prompt=system_prompt_keywoards, prompt=user_prompt_keywoards + query, timeout=6000)
+        
+        print(f"Получил ответ {index} запроса ({tokens_answer} токенов)")
+        
         return answer, tokens_answer
     except Exception as e:
         print(f"Ошибка при запросе к API: {e}")
@@ -67,7 +71,7 @@ async def process_query(query):
 async def run_batch(batch_size):
     """Запуск пакета запросов заданного размера"""
     start_time = time.time()
-    tasks = [process_query(user_query) for _ in range(batch_size)]
+    tasks = [process_query(user_query, i) for i in range(batch_size)]
     results = await asyncio.gather(*tasks)
     end_time = time.time()
     
@@ -88,7 +92,23 @@ async def run_batch(batch_size):
 
 async def main(parallels:int=8, max_requests:int=10):
     # запуск ollama в отдельном процессе с параметром OLLAMA_NUM_PARALLEL
-    ollama_process = subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, env={**os.environ, "OLLAMA_NUM_PARALLEL": str(parallels)})
+    ollama_path = os.getenv("OLLAMA_PATH")
+
+    # Создаем минимальное окружение, чтобы не передавать лишнее из venv
+    clean_env = os.environ.copy() 
+    # Можно даже попробовать совсем чистое окружение, если предыдущее не сработает:
+    # clean_env = {} 
+    clean_env["OLLAMA_NUM_PARALLEL"] = str(parallels)
+    # Возможно, потребуется добавить системный PATH, если ollama его ищет
+    # clean_env["PATH"] = os.environ.get("SystemRoot", "") + r"\\System32;" + os.environ.get("PATH", "") # Пример для Windows
+
+    # Запускаем ollama в новом окне консоли
+    ollama_process = subprocess.Popen([ollama_path, "serve"], 
+                                      env=clean_env, 
+                                      creationflags=subprocess.CREATE_NEW_CONSOLE)    
+    
+    print(f"Запущен ollama serve с OLLAMA_NUM_PARALLEL={parallels} в отдельном окне. Ожидание 7 секунд...")
+    time.sleep(7) # Даем время на запуск сервера
     
     start_time = time.time()
 
@@ -117,14 +137,6 @@ async def main(parallels:int=8, max_requests:int=10):
     
     # Сохранение в CSV
     df.to_csv(f"results/results_{parallels}.csv", index=False)
-    
-    # Сохранение журнала из процесса ollama 
-    try:
-        log_output = ollama_process.stdout.read1().decode("utf-8", errors="replace")
-        with open(f"results/ollama_log_{parallels}.txt", "w", encoding="utf-8") as f:
-            f.write(log_output)
-    except Exception as e:
-        print(f"Ошибка при сохранении лога: {e}")
     
     # Завершение процесса ollama
     ollama_process.terminate()
@@ -166,24 +178,46 @@ async def main(parallels:int=8, max_requests:int=10):
     print(f"Завершено за {(end_time - start_time):.2f} секунд")
 
 if __name__ == "__main__":
+    start_time_all = time.time()
     start_time = time.time()
-    print("Запуск проверки скорости для 10 параллельных запросов (до 30 запросов)")
-    asyncio.run(main(parallels=10, max_requests=30))
+    print("Запуск проверки скорости для 4 параллельных запросов (до 50 запросов)")
+    asyncio.run(main(parallels=4, max_requests=50))
     end_time = time.time()
+
+    print("Запуск проверки скорости для 6 параллельных запросов (до 50 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=6, max_requests=50))
+    end_time = time.time()
+
+    print("Запуск проверки скорости для 8 параллельных запросов (до 50 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=8, max_requests=50))
+    end_time = time.time()
+
+    print("Запуск проверки скорости для 10 параллельных запросов (до 50 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=10, max_requests=50))
+    end_time = time.time()
+
+    print("Запуск проверки скорости для 12 параллельных запросов (до 50 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=12, max_requests=50))
+    end_time = time.time()
+
+    print(f"Завершено за {(end_time - start_time):.2f} секунд")
+    start_time = time.time()
+    print("Запуск проверки скорости для 15 параллельных запросов (до 50 запросов)")
+    asyncio.run(main(parallels=15, max_requests=50))
+    end_time = time.time()
+    
     print(f"Завершено за {(end_time - start_time):.2f} секунд")
     start_time = time.time()
     print("Запуск проверки скорости для 20 параллельных запросов (до 50 запросов)")
     asyncio.run(main(parallels=20, max_requests=50))
     end_time = time.time()
     print(f"Завершено за {(end_time - start_time):.2f} секунд")
-    start_time = time.time()
-    print("Запуск проверки скорости для 40 параллельных запросов (до 70 запросов)")
-    asyncio.run(main(parallels=40, max_requests=70))
-    end_time = time.time()
-    print(f"Завершено за {(end_time - start_time):.2f} секунд")
-    start_time = time.time()
-    print("Запуск проверки скорости для 80 параллельных запросов (до 90 запросов)")
-    asyncio.run(main(parallels=80, max_requests=90))
-    end_time = time.time()
-    print(f"Завершено за {(end_time - start_time):.2f} секунд")
 
+    print(f"Полный прогон за {(end_time - start_time_all) / 60:.2f} минут")
+    
+    # Генерация отчета
+    generate_report()
