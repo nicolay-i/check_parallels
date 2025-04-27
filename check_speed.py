@@ -16,50 +16,36 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import subprocess
 
-user_query = "Как улучшить качество ответов нейросетей?"
-
 system_prompt_keywoards = """
-Ты — ИИ-ассистент, специализирующийся на анализе текстов и генерации ключевых слов для поисковых систем. Твоя задача — на основе запроса пользователя сгенерировать три списка ключевых слов/фраз, отражающих разную степень релевантности к запросу.
-
-**Входные данные:** Текстовый запрос от пользователя.
-
-**Задача:**
-1.  Проанализируй семантику и основные сущности в запросе пользователя.
-2.  Сгенерируй три списка ключевых слов/фраз (каждый по 5-10 элементов):
-    *   **Уровень 1 (Высокая релевантность):** Слова/фразы, наиболее точно и полно отражающие суть запроса. Это могут быть прямые синонимы, основные термины, конкретные технологии или проблемы, упомянутые в запросе.
-    *   **Уровень 2 (Средняя релевантность):** Слова/фразы, семантически связанные с запросом или представляющие его важные аспекты, контекст, смежные области.
-    *   **Уровень 3 (Низкая релевантность):** Слова/фразы, представляющие более широкие категории, косвенно связанные темы или альтернативные подходы.
-3.  Старайся генерировать не только отдельные слова, но и значимые словосочетания (n-граммы), где это уместно.
-4.  Можешь использовать синонимы и связанные понятия для расширения списка.
-
-**Формат вывода:** Предоставь результат в простом текстовом формате, четко разделяя уровни. Каждый уровень должен начинаться с метки "Уровень X:" и содержать список ключевых слов/фраз, разделенными точкой с запятой.
-
-**Пример формата вывода:** 1
-
-Уровень 1 (высокая релевантность, наиболее точные совпадения): слово1; фраза 1; ...
-Уровень 2 (средняя релевантность, семантически связанные понятия): слово2; фраза 2; ...
-Уровень 3 (низкая релевантность, более широкие категории): слово3; фраза 3; ...
-
-**Ограничения:**
-*   Каждый список должен содержать от 5 до 10 уникальных элементов.
-*   Ключевые слова/фразы должны быть на русском языке.
-*   Не включай в списки сам исходный запрос пользователя целиком.
+Переведи текст с комментариями на русский, сохраняя форматирование комментариев с ">" и оставляя без изменений названия полей "UserName" и "Text".  
+Необходимо точно передать смысл комментариев, сохраняя структуру и стиль исходного текста.  
+Учитывай контекст всего перевода, чтобы обеспечить плавную и корректную передачу информации.  
+Результат должен быть точным и хорошо читаемым, идеально подходящим для использования в системе.  
+При необходимости, используй дополнительные слова или фразы для улучшения качества перевода.
 """
 
 user_prompt_keywoards = """
-Сгенерируй список ключевых слов для следующего запроса:
+### Title
+STT with multi-shot
 
-**Запрос:** 
+### Text
+Hey everyone,
+I'm looking into selfhosting some STT for my apps, but I wanted to know if there's a way to do multi-shot ? Like with in context some .wav | transcription | .wav | transcription so that I can adapt it to my voice without re-training it.
 
+Or is whisper.cpp still the only good way ?
+
+### Comments
+> UserName: t2_mkmia1m4g
+> Text: If you are looking for optimized ways of using the whisper then you can try faster whisper.  We have already created a blog on this: https://docs.inferless.com/how-to-guides/deploy-whisper-large-v3-using-inferless#deploy-whisper-large-v3-using-inferless
 """
 
 # загрузка переменных окружения
 load_dotenv()
 
-async def process_query(query, index):
+async def process_query(index):
     """Отправка запроса к API OpenAI"""
     try:
-        answer, tokens_answer, model_answer = await ask_ai(system_prompt=system_prompt_keywoards, prompt=user_prompt_keywoards + query, timeout=6000)
+        answer, tokens_answer, model_answer = await ask_ai(system_prompt=system_prompt_keywoards, prompt=user_prompt_keywoards, timeout=6000)
         
         print(f"Получил ответ {index} запроса ({tokens_answer} токенов)")
         
@@ -71,7 +57,7 @@ async def process_query(query, index):
 async def run_batch(num_parallels):
     """Запуск пакета запросов заданного размера"""
     start_time = time.time()
-    tasks = [process_query(user_query, i) for i in range(num_parallels)]
+    tasks = [process_query(i) for i in range(num_parallels)]
     results = await asyncio.gather(*tasks)
     end_time = time.time()
     
@@ -194,43 +180,43 @@ if __name__ == "__main__":
     
     max_requests = 50
     
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 4 параллельных запросов (до 50 запросов)")
-    # asyncio.run(main(parallels=4, max_requests=max_requests))
-    # end_time = time.time()
+    start_time = time.time()
+    print("Запуск проверки скорости для 4 параллельных запросов (до 50 запросов)")
+    asyncio.run(main(parallels=4, max_requests=max_requests))
+    end_time = time.time()
 
-    # print("Запуск проверки скорости для 6 параллельных запросов (до 50 запросов)")
-    # start_time = time.time()
-    # asyncio.run(main(parallels=6, max_requests=max_requests))
-    # end_time = time.time()
+    print("Запуск проверки скорости для 6 параллельных запросов (до 50 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=6, max_requests=max_requests))
+    end_time = time.time()
 
-    # print("Запуск проверки скорости для 8 параллельных запросов (до 30 запросов)")
-    # start_time = time.time()
-    # asyncio.run(main(parallels=8, max_requests=max_requests))
-    # end_time = time.time()
+    print("Запуск проверки скорости для 8 параллельных запросов (до 30 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=8, max_requests=max_requests))
+    end_time = time.time()
 
-    # print("Запуск проверки скорости для 10 параллельных запросов (до 30 запросов)")
-    # start_time = time.time()
-    # asyncio.run(main(parallels=10, max_requests=max_requests))
-    # end_time = time.time()
+    print("Запуск проверки скорости для 10 параллельных запросов (до 30 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=10, max_requests=max_requests))
+    end_time = time.time()
 
-    # print("Запуск проверки скорости для 12 параллельных запросов (до 30 запросов)")
-    # start_time = time.time()
-    # asyncio.run(main(parallels=12, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
+    print("Запуск проверки скорости для 12 параллельных запросов (до 30 запросов)")
+    start_time = time.time()
+    asyncio.run(main(parallels=12, max_requests=max_requests))
+    end_time = time.time()
+    print(f"Завершено за {(end_time - start_time):.2f} секунд")
     
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 15 параллельных запросов (до 30 запросов)")
-    # asyncio.run(main(parallels=15, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
+    start_time = time.time()
+    print("Запуск проверки скорости для 15 параллельных запросов (до 30 запросов)")
+    asyncio.run(main(parallels=15, max_requests=max_requests))
+    end_time = time.time()
+    print(f"Завершено за {(end_time - start_time):.2f} секунд")
     
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 20 параллельных запросов (до 30 запросов)")
-    # asyncio.run(main(parallels=20, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
+    start_time = time.time()
+    print("Запуск проверки скорости для 20 параллельных запросов (до 30 запросов)")
+    asyncio.run(main(parallels=20, max_requests=max_requests))
+    end_time = time.time()
+    print(f"Завершено за {(end_time - start_time):.2f} секунд")
 
     start_time = time.time()
     print("Запуск проверки скорости для 18 параллельных запросов (до 30 запросов)")
