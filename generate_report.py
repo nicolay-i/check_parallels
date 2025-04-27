@@ -12,10 +12,13 @@
 
 
 import os
+from dotenv import load_dotenv
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
 from glob import glob
+
+load_dotenv()
 
 def generate_report():
     # Поиск всех файлов с результатами
@@ -39,8 +42,10 @@ def generate_report():
     # Определение абсолютно лучшей конфигурации
     best_config = all_results_df.loc[all_results_df['Максимальная скорость (токены/сек)'].idxmax()]
     
+    model = os.getenv('OPENAI_MODEL')
+    
     with open('report.md', 'w', encoding='utf-8') as report_file:
-        report_file.write('# Отчет о производительности\n\n')
+        report_file.write(f'# Отчет о производительности для {model}\n\n')
         
         report_file.write('## Итоговые выводы по всем прогонам\n\n')
         
