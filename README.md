@@ -75,7 +75,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Запустите скрипт:
+4. Заполните файл `.env`:
+```bash
+OPENAI_BASE_URL=http://127.0.0.1:11234/v1
+OPENAI_MODEL=gemma3:4b
+
+OLLAMA_PATH=C:\\Users\\<username>\\AppData\\Local\\Programs\\Ollama\\ollama.exe
+```
+
+5. Запустите скрипт:
 ```bash
 python check_speed.py
 ```
