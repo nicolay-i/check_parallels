@@ -19,7 +19,7 @@ from glob import glob
 
 def generate_report():
     # Поиск всех файлов с результатами
-    results_files = sorted(glob('results/results_*.csv'), key=lambda x: int(re.search(r'results_(\d+)\.csv', x).group(1)))
+    results_files = sorted(glob('./results/results_*.csv'), key=lambda x: int(re.search(r'results_(\d+)\.csv', x).group(1)))
     
     # Подготовка данных для итоговых выводов
     all_results = []
@@ -28,7 +28,7 @@ def generate_report():
         df = pd.read_csv(result_file)
         best_result = df.loc[df['Токены в секунду'].idxmax()]
         all_results.append({
-            'Количество параллельных запросов': int(parallel_requests),
+            'Количество workers': int(parallel_requests),
             'Оптимальный размер пакета': int(best_result['Количество параллельных запросов']),
             'Максимальная скорость (токены/сек)': best_result['Токены в секунду']
         })
@@ -50,7 +50,7 @@ def generate_report():
         
         # Лучшая конфигурация
         report_file.write('### Наилучшая конфигурация для данного оборудования\n\n')
-        report_file.write(f'- **Количество параллельных запросов:** {int(best_config["Количество параллельных запросов"])}\n')
+        report_file.write(f'- **Количество workers:** {int(best_config["Количество workers"])}\n')
         report_file.write(f'- **Оптимальный размер пакета:** {int(best_config["Оптимальный размер пакета"])}\n')
         report_file.write(f'- **Скорость обработки:** {best_config["Максимальная скорость (токены/сек)"]:.2f} токенов/сек\n\n')
                 
