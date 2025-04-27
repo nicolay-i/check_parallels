@@ -187,43 +187,64 @@ async def main(parallels:int=8, max_requests:int=10):
 if __name__ == "__main__":
     start_time_all = time.time()
     
+    max_requests = 50
+    
     # start_time = time.time()
-    # print("Запуск проверки скорости для 4 параллельных запросов (до 30 запросов)")
-    # asyncio.run(main(parallels=4, max_requests=30))
+    # print("Запуск проверки скорости для 4 параллельных запросов (до 50 запросов)")
+    # asyncio.run(main(parallels=4, max_requests=max_requests))
     # end_time = time.time()
 
-    # print("Запуск проверки скорости для 6 параллельных запросов (до 30 запросов)")
+    # print("Запуск проверки скорости для 6 параллельных запросов (до 50 запросов)")
     # start_time = time.time()
-    # asyncio.run(main(parallels=6, max_requests=30))
+    # asyncio.run(main(parallels=6, max_requests=max_requests))
     # end_time = time.time()
 
-    print("Запуск проверки скорости для 8 параллельных запросов (до 30 запросов)")
-    start_time = time.time()
-    asyncio.run(main(parallels=8, max_requests=30))
-    end_time = time.time()
+    # print("Запуск проверки скорости для 8 параллельных запросов (до 30 запросов)")
+    # start_time = time.time()
+    # asyncio.run(main(parallels=8, max_requests=max_requests))
+    # end_time = time.time()
 
     # print("Запуск проверки скорости для 10 параллельных запросов (до 30 запросов)")
     # start_time = time.time()
-    # asyncio.run(main(parallels=10, max_requests=30))
+    # asyncio.run(main(parallels=10, max_requests=max_requests))
     # end_time = time.time()
 
     # print("Запуск проверки скорости для 12 параллельных запросов (до 30 запросов)")
     # start_time = time.time()
-    # asyncio.run(main(parallels=12, max_requests=30))
+    # asyncio.run(main(parallels=12, max_requests=max_requests))
     # end_time = time.time()
     # print(f"Завершено за {(end_time - start_time):.2f} секунд")
     
-    start_time = time.time()
-    print("Запуск проверки скорости для 15 параллельных запросов (до 30 запросов)")
-    asyncio.run(main(parallels=15, max_requests=30))
-    end_time = time.time()
-    print(f"Завершено за {(end_time - start_time):.2f} секунд")
+    # start_time = time.time()
+    # print("Запуск проверки скорости для 15 параллельных запросов (до 30 запросов)")
+    # asyncio.run(main(parallels=15, max_requests=max_requests))
+    # end_time = time.time()
+    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
     
+    # start_time = time.time()
+    # print("Запуск проверки скорости для 20 параллельных запросов (до 30 запросов)")
+    # asyncio.run(main(parallels=20, max_requests=max_requests))
+    # end_time = time.time()
+    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
+
     start_time = time.time()
-    print("Запуск проверки скорости для 20 параллельных запросов (до 30 запросов)")
-    asyncio.run(main(parallels=20, max_requests=30))
+    print("Запуск проверки скорости для 30 параллельных запросов (до 30 запросов)")
+    asyncio.run(main(parallels=30, max_requests=max_requests))
     end_time = time.time()
     print(f"Завершено за {(end_time - start_time):.2f} секунд")
+
+    start_time = time.time()
+    print("Запуск проверки скорости для 40 параллельных запросов (до 30 запросов)")
+    asyncio.run(main(parallels=40, max_requests=max_requests))
+    end_time = time.time()
+    print(f"Завершено за {(end_time - start_time):.2f} секунд")
+
+    start_time = time.time()
+    print("Запуск проверки скорости для 50 параллельных запросов (до 30 запросов)")
+    asyncio.run(main(parallels=50, max_requests=max_requests))
+    end_time = time.time()
+    print(f"Завершено за {(end_time - start_time):.2f} секунд")
+
 
     print(f"Полный прогон за {(end_time - start_time_all) / 60:.2f} минут")
     
