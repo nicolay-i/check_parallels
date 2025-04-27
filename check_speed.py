@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import subprocess
 
+sleep_time = 30
+
 system_prompt_keywoards = """
 Переведи текст с комментариями на русский, сохраняя форматирование комментариев с ">" и оставляя без изменений названия полей "UserName" и "Text".  
 Необходимо точно передать смысл комментариев, сохраняя структуру и стиль исходного текста.  
@@ -48,6 +50,8 @@ async def process_query(index):
         answer, tokens_answer, model_answer = await ask_ai(system_prompt=system_prompt_keywoards, prompt=user_prompt_keywoards, timeout=6000)
         
         print(f"Получил ответ {index} запроса ({tokens_answer} токенов)")
+        
+        await asyncio.sleep(sleep_time)
         
         return answer, tokens_answer
     except Exception as e:
@@ -120,7 +124,7 @@ async def main(parallels:int=8, max_requests:int=10):
         result = await run_batch(size)
         results.append(result)
         print(f"Завершено за {result['total_time']:.2f} секунд")
-        await asyncio.sleep(2)
+        await asyncio.sleep(sleep_time)
     
     # Обновление DataFrame для включения токенов в секунду и суммы токенов
     df = pd.DataFrame([(r["num_parallels"], r["total_time"], r["avg_time"], r["tokens_per_second"], r["total_tokens"]) 
