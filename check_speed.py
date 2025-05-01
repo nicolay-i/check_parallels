@@ -27,6 +27,8 @@ system_prompt_keywoards = """
 """
 
 user_prompt_keywoards = """
+/no_think
+
 ### Title
 STT with multi-shot
 
@@ -50,8 +52,6 @@ async def process_query(index):
         answer, tokens_answer, model_answer = await ask_ai(system_prompt=system_prompt_keywoards, prompt=user_prompt_keywoards, timeout=6000)
         
         print(f"Получил ответ {index} запроса ({tokens_answer} токенов)")
-        
-        await asyncio.sleep(sleep_time)
         
         return answer, tokens_answer
     except Exception as e:
@@ -81,6 +81,8 @@ async def run_batch(num_parallels):
     }
 
 async def main(parallels:int=8, max_requests:int=10):
+    start_time = time.time()
+    print(f"Запуск проверки скорости для {parallels} параллельных запросов (до {max_requests} запросов)")
     # запуск ollama в отдельном процессе с параметром OLLAMA_NUM_PARALLEL
     ollama_path = os.getenv("OLLAMA_PATH")
 
@@ -98,11 +100,8 @@ async def main(parallels:int=8, max_requests:int=10):
                                       creationflags=subprocess.CREATE_NEW_CONSOLE,
                                       shell=False)    
     
-    print(f"Запущен ollama serve с OLLAMA_NUM_PARALLEL={parallels} в отдельном окне. Ожидание 7 секунд...")
-    time.sleep(7) # Даем время на запуск сервера
+    time.sleep(1) # Даем время на запуск сервера
     
-    start_time = time.time()
-
     num_parallels = []
     current_size = 1
     while current_size <= max_requests:
@@ -120,11 +119,18 @@ async def main(parallels:int=8, max_requests:int=10):
     results = []
     
     for size in tqdm(num_parallels, desc="Обработка пакетов"):
+        start_time_batch = time.time()
+
         print(f"\nЗапуск пакета размером {size}...")
         result = await run_batch(size)
         results.append(result)
-        print(f"Завершено за {result['total_time']:.2f} секунд")
-        await asyncio.sleep(sleep_time)
+        
+        # выбираем минимальное время из двух
+        min_time = min(time.time() - start_time_batch, sleep_time)
+
+        print(f"Завершено за {result['total_time']:.2f} секунд, пауза {min_time:.2f} секунд")
+
+        await asyncio.sleep(min_time)
     
     # Обновление DataFrame для включения токенов в секунду и суммы токенов
     df = pd.DataFrame([(r["num_parallels"], r["total_time"], r["avg_time"], r["tokens_per_second"], r["total_tokens"]) 
@@ -177,6 +183,7 @@ async def main(parallels:int=8, max_requests:int=10):
     plt.savefig(f"results/performance_metrics_{parallels}.png")
     print(f"Результаты сохранены в results/results_{parallels}.csv и results/performance_metrics_{parallels}.png")
     end_time = time.time()
+    
     print(f"Завершено за {(end_time - start_time):.2f} секунд")
 
 if __name__ == "__main__":
@@ -184,92 +191,23 @@ if __name__ == "__main__":
     
     max_requests = 50
     
-    start_time = time.time()
-    print("Запуск проверки скорости для 1 параллельных запросов (до 5 запросов)")
-    asyncio.run(main(parallels=1, max_requests=5))
-    end_time = time.time()
-
-    start_time = time.time()
-    print("Запуск проверки скорости для 2 параллельных запросов (до 8 запросов)")
+    # asyncio.run(main(parallels=1, max_requests=5))
     asyncio.run(main(parallels=2, max_requests=8))
-    end_time = time.time()
-
-    start_time = time.time()
-    print("Запуск проверки скорости для 3 параллельных запросов (до 12 запросов)")
     asyncio.run(main(parallels=3, max_requests=12))
-    end_time = time.time()
-
-    start_time = time.time()
-    print("Запуск проверки скорости для 5 параллельных запросов (до 30 запросов)")
-    asyncio.run(main(parallels=5, max_requests=30))
-    end_time = time.time()
-
-    start_time = time.time()
-    print("Запуск проверки скорости для 6 параллельных запросов (до 30 запросов)")
-    asyncio.run(main(parallels=6, max_requests=30))
-    end_time = time.time()
-
-    start_time = time.time()
-    print("Запуск проверки скорости для 4 параллельных запросов (до 50 запросов)")
-    asyncio.run(main(parallels=4, max_requests=max_requests))
-    end_time = time.time()
-
-    print("Запуск проверки скорости для 6 параллельных запросов (до 50 запросов)")
-    start_time = time.time()
-    asyncio.run(main(parallels=6, max_requests=max_requests))
-    end_time = time.time()
-
-    print("Запуск проверки скорости для 8 параллельных запросов (до 30 запросов)")
-    start_time = time.time()
-    asyncio.run(main(parallels=8, max_requests=max_requests))
-    end_time = time.time()
-
-    print("Запуск проверки скорости для 10 параллельных запросов (до 30 запросов)")
-    start_time = time.time()
-    asyncio.run(main(parallels=10, max_requests=max_requests))
-    end_time = time.time()
-
-    # print("Запуск проверки скорости для 12 параллельных запросов (до 30 запросов)")
-    # start_time = time.time()
+    asyncio.run(main(parallels=4, max_requests=16))
+    asyncio.run(main(parallels=5, max_requests=20))
+    asyncio.run(main(parallels=6, max_requests=24))
+    asyncio.run(main(parallels=8, max_requests=32))
+    asyncio.run(main(parallels=10, max_requests=20))
     # asyncio.run(main(parallels=12, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
-    
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 15 параллельных запросов (до 30 запросов)")
-    # asyncio.run(main(parallels=15, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
-    
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 20 параллельных запросов (до 30 запросов)")
+    asyncio.run(main(parallels=15, max_requests=30))
     # asyncio.run(main(parallels=20, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
-
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 18 параллельных запросов (до 30 запросов)")
     # asyncio.run(main(parallels=18, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
+    asyncio.run(main(parallels=22, max_requests=44))
+    asyncio.run(main(parallels=24, max_requests=48))
+    asyncio.run(main(parallels=28, max_requests=56))
 
-
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 22 параллельных запросов (до 30 запросов)")
-    # asyncio.run(main(parallels=22, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
-
-
-    # start_time = time.time()
-    # print("Запуск проверки скорости для 24 параллельных запросов (до 30 запросов)")
-    # asyncio.run(main(parallels=24, max_requests=max_requests))
-    # end_time = time.time()
-    # print(f"Завершено за {(end_time - start_time):.2f} секунд")
-
-
-
-    print(f"Полный прогон за {(end_time - start_time_all) / 60:.2f} минут")
+    print(f"Полный прогон за {(time.time() - start_time_all) / 60:.2f} минут")
     
     # Генерация отчета
     generate_report()
