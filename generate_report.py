@@ -12,6 +12,7 @@
 
 
 import os
+import shutil
 from dotenv import load_dotenv
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -44,7 +45,21 @@ def generate_report():
     
     model = os.getenv('OPENAI_MODEL')
     
-    with open('report.md', 'w', encoding='utf-8') as report_file:
+    # Создаем безопасное имя папки для модели (заменяем ":" на "-")
+    safe_model_name = model.replace(":", "-")
+    model_dir = os.path.join(os.getcwd(), safe_model_name)
+    
+    # Удаляем папку модели, если она существует
+    if os.path.exists(model_dir):
+        shutil.rmtree(model_dir)
+    
+    # Создаем новую папку для модели
+    os.makedirs(model_dir, exist_ok=True)
+    
+    # Создаем отчет в папке модели
+    report_path = os.path.join(model_dir, 'report.md')
+    
+    with open(report_path, 'w', encoding='utf-8') as report_file:
         report_file.write(f'# Отчет о производительности для {model}\n\n')
         
         report_file.write('## Итоговые выводы по всем прогонам\n\n')
@@ -74,10 +89,11 @@ def generate_report():
             # Добавление заголовка секции в отчет
             report_file.write(f'### Результаты для {parallel_requests} параллельных запросов\n\n')
             
-            # Добавление графика
+            # Добавление графика с новым путем для корректного отображения
             image_path = f'results/performance_metrics_{parallel_requests}.png'
             if os.path.exists(image_path):
-                report_file.write(f'![График производительности для {parallel_requests} параллельных запросов]({image_path})\n\n')
+                # В отчёте используем относительный путь к файлам в подпапке results
+                report_file.write(f'![График производительности для {parallel_requests} параллельных запросов](results/performance_metrics_{parallel_requests}.png)\n\n')
             
             # Добавление таблицы с результатами
             report_file.write('#### Таблица результатов\n\n')
@@ -89,8 +105,23 @@ def generate_report():
             report_file.write(f'**Максимальная скорость обработки:** {optimal_batch["Токены в секунду"]:.2f} токенов в секунду\n\n')
             
             report_file.write('---\n\n')
+    
+    # Копируем всю папку results в папку модели
+    results_dir = os.path.join(os.getcwd(), 'results')
+    model_results_dir = os.path.join(model_dir, 'results')
+    
+    # Создаем папку results в папке модели
+    if os.path.exists(results_dir):
+        # Копируем содержимое папки results
+        shutil.copytree(results_dir, model_results_dir)
+    
+    # Копируем основной report.md для обратной совместимости
+    shutil.copy2(report_path, 'report.md')
+    
+    return model_dir, safe_model_name
 
 if __name__ == "__main__":
-    generate_report()
-    print("Отчет успешно сгенерирован в файле report.md")
+    model_dir, model_name = generate_report()
+    print(f"Отчет успешно сгенерирован в файле report.md")
+    print(f"Все результаты сохранены в папке: {model_name}")
 
