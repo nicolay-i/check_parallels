@@ -105,7 +105,7 @@ async def main(parallels:int=8, max_requests:int=10):
     num_parallels = []
     current_size = 1
     while current_size <= max_requests:
-        num_parallels.append(current_size)
+        num_parallels.append(int(current_size))
         
         if current_size > 40:
             current_size *= 1.5
@@ -122,7 +122,7 @@ async def main(parallels:int=8, max_requests:int=10):
         start_time_batch = time.time()
 
         print(f"\nЗапуск пакета размером {size}...")
-        result = await run_batch(size)
+        result = await run_batch(int(size))
         results.append(result)
         
         # выбираем минимальное время из двух
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     
     max_requests = 50
     
-    # asyncio.run(main(parallels=1, max_requests=5))
+    asyncio.run(main(parallels=1, max_requests=5))
     asyncio.run(main(parallels=2, max_requests=8))
     asyncio.run(main(parallels=3, max_requests=9))
     asyncio.run(main(parallels=4, max_requests=12))
@@ -206,6 +206,9 @@ if __name__ == "__main__":
     asyncio.run(main(parallels=22, max_requests=44))
     asyncio.run(main(parallels=24, max_requests=48))
     asyncio.run(main(parallels=28, max_requests=56))
+    asyncio.run(main(parallels=32, max_requests=64))
+    asyncio.run(main(parallels=36, max_requests=36))
+
 
     print(f"Полный прогон за {(time.time() - start_time_all) / 60:.2f} минут")
     
